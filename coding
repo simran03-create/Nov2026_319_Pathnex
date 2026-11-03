@@ -1,0 +1,24 @@
+- name: Install Nginx on World server
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: nginx
+      yum:
+        name: nginx
+        state: present
+
+
+  Docker
+# Docker Installation & First Container
+docker --version
+docker run ubuntu echo "Hello World"
+
+
+# Docker File
+FROM ubuntu:22.04
+CMD ["echo", "Hello World"]
+
+
+
+
