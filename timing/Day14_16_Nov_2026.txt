@@ -1,0 +1,4 @@
+3 hours - Helm
+1 hour - English 
+4 hours - kubernetes
+2 hours - Linux
