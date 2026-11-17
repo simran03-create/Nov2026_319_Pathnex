@@ -1,0 +1,95 @@
+name: Setup Nginx with Reverse Proxy
+  hosts: all
+  become: yes
+  tasks:
+    - name: Install nginx
+      yum:
+        name: nginx
+        state: present
+    - name: Configure nginx as reverse proxy
+      template:
+        src: reverse-proxy.conf.j2
+        dest: /etc/nginx/conf.d/reverse-proxy.conf
+    - name: Restart nginx service
+      service:
+        name: nginx
+        state: restarted
+        enabled: yes
+resource "aws_s3_bucket" "dark_bucket" {
+  bucket = "dark-bucket"
+  versioning {
+    enabled = true
+  }
+
+  logging {
+    target_bucket = "dark-log-bucket"
+    target_prefix = "logs/"
+  }
+}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dark-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: dark.local
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: dark-service
+              port:
+                number: 80
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building Docker image...'
+                docker.build('dark-web-app')
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+            }
+        }
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    sh 'kubectl apply -f kubernetes/deployment.yaml'
+                }
+            }
+        }
+    }
+}
+stages:
+  - build
+  - push
+  - deploy
+
+build:
+  stage: build
+  script:
+    - docker build -t dark-web-app .
+
+push:
+  stage: push
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
+    - docker push dark-web-app
+
+deploy:
+  stage: deploy
+  script:
+    - helm upgrade --install dark-nginx dark/nginx-ingress
+
+
+# CMD vs ENTRYPOINT
+FROM ubuntu
+ENTRYPOINT ["echo"]
+CMD ["Hello World"]
