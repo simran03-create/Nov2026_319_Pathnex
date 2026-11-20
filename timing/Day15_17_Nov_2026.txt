@@ -1,0 +1,4 @@
+4 hours - Argo CD
+2 hours - Coding 
+3 hours - helm
+1 hour - english reading
